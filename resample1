@@ -1,0 +1,122 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Dec 14 17:09:04 2020
+
+@author: Owner
+"""
+
+import numpy as np
+
+from scipy import signal
+import json
+    
+from math import sin, cos, pi
+import matplotlib.pyplot as plt
+#import pandas as pd
+
+#from tensorflow.keras.models import Sequential
+#from tensorflow.keras.layers import LSTM
+#from tensorflow.keras.layers import Dense
+
+
+#model = Sequential()
+#model.add(LSTM(10, activation='tanh'))
+#model.add(Dense(1, activation='tanh'))
+#model.compile(optimizer='adam', loss='mse')
+
+
+
+def getJSON(filePathAndName):
+    with open(filePathAndName, 'r') as fp:
+        return json.load(fp)
+
+data = getJSON('DROPBEAR_dataset.json')
+
+def getData(x):
+    DataList = list()
+    for i in data.get(x):
+        i = str(i) 
+        DataList.append(i)
+        
+    return DataList
+
+
+def deleteNan(x):
+    DataList = list()
+    for i in range(len(x)):
+        if x[i].replace('.', '', 1).lstrip('-').isdigit()== True:
+            DataList.append(float(x[i]))
+            
+    return np.array(DataList)
+
+X = getData("acceleration_data")
+Y = getData("measured_pin_location")
+Z = getData("time_acceleration_data")     
+
+X = deleteNan(X)
+Y = deleteNan(Y)
+Z = deleteNan(Z)
+train_seq = Y
+realX = X
+realY = Y
+print(len(Z))
+print("acceleration data:", len(X), type(X))
+print("measured_pin_location:", len(Y))
+
+
+def resampled(x, L, M):
+    penis = list()
+    length = np.arange(0, (M-(M/L)), (M/L))
+    
+    if L>=M:                        #upsampling
+        b =int(len(x)*(L/M)+1)
+        penis = signal.resample(x, b)
+        #plt.plot(np.arange(0, int(len(x)), (M/L)), penis, 'blue')
+        #print('pinlocation',int(len(x)) )
+        #plt.show()
+        #plt.plot(range(len(x)), x , 'red')
+        #plt.show()
+        
+    else:                            #downsampling
+        b = int(len(x)/M)
+        
+        penis = signal.resample(x, b)
+        #plt.plot(np.arange(0, int(len(x)), (M/L)), penis, 'blue' )
+        #print('accel',int(len(x)) )
+        #plt.show()
+        #plt.plot(range(len(x)), x , 'red')
+        #plt.show()
+
+    return penis
+n_steps = 80      
+X = resampled(X, 1, 8)
+print(len(X))
+Y= resampled(Y, 854, 113)
+print(len(Y))
+plt.plot(range(len(train_seq[:60])), train_seq[:60], 'blue')
+plt.show()
+d = range(len(train_seq))
+
+plt.plot(range(len(X)), X, 'blue')
+plt.ylabel('accel')
+plt.title('Vibration')
+plt.xlabel('Time')
+plt.show()
+#plt.plot(range(len(realX)),realX , 'red')
+#plt.show()
+plt.plot(range(len(realY))[n_steps:], realY[n_steps:], 'blue')
+plt.plot(range(len(realY))[:n_steps], realY[:n_steps], 'red')
+plt.ylabel('Pin Location ')
+plt.title('Pin Position')
+plt.xlabel('Time')
+plt.show()
+#plt.plot(range(len(realY)), realY , 'red')
+#plt.show()
+
+
+#plt.plot(d[n_steps:], test_y[n_steps:], label="predicitons")
+#plt.plot(d, train_seq, label="ground truth")
+#plt.plot(d[:n_steps], test_y[:n_steps], label="initial sequence", color="red")
+#plt.legend(loc='upper left')
+#plt.ylim(0, .2)
+#plt.show()
